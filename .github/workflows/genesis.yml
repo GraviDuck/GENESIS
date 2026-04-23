@@ -1,0 +1,28 @@
+name: Genesis Miner
+
+on:
+workflow_dispatch:
+
+jobs:
+mine-genesis:
+runs-on: ubuntu-latest
+steps:
+  - name: Checkout repository
+    uses: actions/checkout@v4
+
+  - name: Install dependencies
+    run: |
+      sudo apt update
+      sudo apt install -y g++ libssl-dev libboost-all-dev
+
+  - name: Compile genesis generator
+    run: |
+      g++ -O3 -std=c++17 genesis.cpp -o genesis -lcrypto
+
+  - name: Run genesis miner
+    run: |
+      ./genesis \
+      04678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38c4f35504e51ec112de5c384df7ba0b8d578a4c702b6bf11d5f \
+      "My Genesis Block April 2026" \
+      0x1e00ffff \
+      50
