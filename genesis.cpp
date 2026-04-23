@@ -1,4 +1,4 @@
-#include <iostream> // g++ -O3 -static genesis.cpp -o genesis -lcrypto
+#include <iostream> // g++ -O3 -static -std=c++17 genesis.cpp -o genesis -lcrypto
 #include <vector>
 #include <string>
 #include <sstream>
@@ -24,9 +24,12 @@ vector<unsigned char> hex_to_bytes(const string& hex) {
 
 string bytes_to_hex(const vector<unsigned char>& data) {
     stringstream ss;
+    ss << hex << nouppercase;
+
     for (unsigned char byte : data) {
-        ss << hex << setw(2) << setfill('0') << (int)byte;
+        ss << setw(2) << setfill('0') << (int)byte;
     }
+
     return ss.str();
 }
 
@@ -46,7 +49,7 @@ vector<unsigned char> double_sha256(const vector<unsigned char>& data) {
 }
 
 void append_uint32_le(vector<unsigned char>& v, uint32_t value) {
-    v.push_back(value & 0xff);
+    v.push_back((value) & 0xff);
     v.push_back((value >> 8) & 0xff);
     v.push_back((value >> 16) & 0xff);
     v.push_back((value >> 24) & 0xff);
@@ -59,15 +62,15 @@ void append_uint64_le(vector<unsigned char>& v, uint64_t value) {
 }
 
 cpp_int get_target(uint32_t nbits) {
-    uint32_t shift = (nbits >> 24) & 0xff;
-    uint32_t diff = nbits & 0x00ffffff;
+    uint32_t exponent = (nbits >> 24) & 0xff;
+    uint32_t mantissa = nbits & 0x007fffff;
 
-    cpp_int target = diff;
+    cpp_int target = mantissa;
 
-    if (shift <= 3) {
-        target >>= (8 * (3 - shift));
+    if (exponent <= 3) {
+        target >>= (8 * (3 - exponent));
     } else {
-        target <<= (8 * (shift - 3));
+        target <<= (8 * (exponent - 3));
     }
 
     return target;
@@ -86,60 +89,70 @@ cpp_int hash_to_int_little(const vector<unsigned char>& hash) {
 string create_merkle_root_exact(
     const string& pubkey,
     const string& message,
-    uint32_t ntime,
     uint32_t nbits,
     double reward
 ) {
-    uint64_t satoshis = (uint64_t)(reward * 100000000);
+    uint64_t satoshis = (uint64_t)(reward * 100000000.0);
 
     vector<unsigned char> msg_bytes(message.begin(), message.end());
 
-    vector<unsigned char> part1;
-    part1.push_back(0x04);
-    append_uint32_le(part1, nbits);
+    vector<unsigned char> script_sig;
 
-    vector<unsigned char> part2 = {0x01, 0x04};
+    script_sig.push_back(0x04);
+    append_uint32_le(script_sig, nbits);
 
-    vector<unsigned char> part3;
+    script_sig.push_back(0x01);
+    script_sig.push_back(0x04);
+
     if (msg_bytes.size() < 76) {
-        part3.push_back((unsigned char)msg_bytes.size());
-        part3.insert(part3.end(), msg_bytes.begin(), msg_bytes.end());
+        script_sig.push_back((unsigned char)msg_bytes.size());
     } else {
-        part3.push_back(0x4c);
-        part3.push_back((unsigned char)msg_bytes.size());
-        part3.insert(part3.end(), msg_bytes.begin(), msg_bytes.end());
+        script_sig.push_back(0x4c);
+        script_sig.push_back((unsigned char)msg_bytes.size());
     }
 
-    vector<unsigned char> script_sig;
-    script_sig.insert(script_sig.end(), part1.begin(), part1.end());
-    script_sig.insert(script_sig.end(), part2.begin(), part2.end());
-    script_sig.insert(script_sig.end(), part3.begin(), part3.end());
+    script_sig.insert(
+        script_sig.end(),
+        msg_bytes.begin(),
+        msg_bytes.end()
+    );
 
-    vector<unsigned char> pk_bytes = hex_to_bytes(pubkey);
+    vector<unsigned char> pubkey_bytes = hex_to_bytes(pubkey);
 
     vector<unsigned char> script_pubkey;
-    if (pk_bytes.size() == 33) {
+
+    if (pubkey_bytes.size() == 33) {
         script_pubkey.push_back(0x21);
-        script_pubkey.insert(script_pubkey.end(), pk_bytes.begin(), pk_bytes.end());
-        script_pubkey.push_back(0xac);
     } else {
         script_pubkey.push_back(0x41);
-        script_pubkey.insert(script_pubkey.end(), pk_bytes.begin(), pk_bytes.end());
-        script_pubkey.push_back(0xac);
     }
+
+    script_pubkey.insert(
+        script_pubkey.end(),
+        pubkey_bytes.begin(),
+        pubkey_bytes.end()
+    );
+
+    script_pubkey.push_back(0xac);
 
     vector<unsigned char> coinbase_tx;
 
     append_uint32_le(coinbase_tx, 1);
+
     coinbase_tx.push_back(0x01);
 
-    for (int i = 0; i < 32; ++i)
+    for (int i = 0; i < 32; ++i) {
         coinbase_tx.push_back(0x00);
+    }
 
     append_uint32_le(coinbase_tx, 0xffffffff);
 
     coinbase_tx.push_back((unsigned char)script_sig.size());
-    coinbase_tx.insert(coinbase_tx.end(), script_sig.begin(), script_sig.end());
+    coinbase_tx.insert(
+        coinbase_tx.end(),
+        script_sig.begin(),
+        script_sig.end()
+    );
 
     append_uint32_le(coinbase_tx, 0xffffffff);
 
@@ -148,7 +161,11 @@ string create_merkle_root_exact(
     append_uint64_le(coinbase_tx, satoshis);
 
     coinbase_tx.push_back((unsigned char)script_pubkey.size());
-    coinbase_tx.insert(coinbase_tx.end(), script_pubkey.begin(), script_pubkey.end());
+    coinbase_tx.insert(
+        coinbase_tx.end(),
+        script_pubkey.begin(),
+        script_pubkey.end()
+    );
 
     append_uint32_le(coinbase_tx, 0);
 
@@ -170,17 +187,17 @@ int main(int argc, char* argv[]) {
     string bits_str = argv[3];
     double reward = stod(argv[4]);
 
-    if (bits_str.rfind("0x", 0) == 0)
+    if (bits_str.rfind("0x", 0) == 0 || bits_str.rfind("0X", 0) == 0) {
         bits_str = bits_str.substr(2);
+    }
 
-    uint32_t VERSION = 1;
-    uint32_t NBITS = stoul(bits_str, nullptr, 16);
-    uint32_t NTIME = (uint32_t)time(nullptr);
+    const uint32_t VERSION = 1;
+    const uint32_t NBITS = stoul(bits_str, nullptr, 16);
+    const uint32_t NTIME = (uint32_t)time(nullptr);
 
     string merkle_root = create_merkle_root_exact(
         pubkey,
         message,
-        NTIME,
         NBITS,
         reward
     );
@@ -191,11 +208,13 @@ int main(int argc, char* argv[]) {
 
     append_uint32_le(header_prefix, VERSION);
 
-    for (int i = 0; i < 32; ++i)
+    for (int i = 0; i < 32; ++i) {
         header_prefix.push_back(0x00);
+    }
 
-    vector<unsigned char> merkle_bytes = hex_to_bytes(merkle_root);
-    merkle_bytes = reverse_bytes(merkle_bytes);
+    vector<unsigned char> merkle_bytes = reverse_bytes(
+        hex_to_bytes(merkle_root)
+    );
 
     header_prefix.insert(
         header_prefix.end(),
@@ -210,27 +229,31 @@ int main(int argc, char* argv[]) {
 
     for (uint32_t nonce = 0; nonce < 0xffffffff; ++nonce) {
         vector<unsigned char> block_header = header_prefix;
+
         append_uint32_le(block_header, nonce);
 
         vector<unsigned char> hash = double_sha256(block_header);
         cpp_int hash_value = hash_to_int_little(hash);
 
         if (hash_value <= target) {
-            string final_hash = bytes_to_hex(reverse_bytes(hash));
+            string final_hash = bytes_to_hex(
+                reverse_bytes(hash)
+            );
 
             cout << endl;
             cout << "=== SUCCESS! RESULTS FOR CHAINPARAMS ===" << endl;
             cout << "pszTimestamp:  \"" << message << "\"" << endl;
             cout << "nTime:         " << NTIME << endl;
             cout << "nNonce:        " << nonce << endl;
-            cout << "nBits:         " << bits_str << endl;
+            cout << "nBits:         0x" << bits_str << endl;
             cout << "Merkle Root:   " << merkle_root << endl;
             cout << "Genesis Hash:  " << final_hash << endl;
             cout << "nVersion:      1" << endl;
             cout << "=========================================" << endl;
-            break;
+            return 0;
         }
     }
 
-    return 0;
+    cout << "No valid nonce found." << endl;
+    return 1;
 }
