@@ -186,8 +186,16 @@ int main(int argc, char* argv[]) {
             char final_hash_hex[65];
             bytes_to_hex(final_hash, 32, final_hash_hex);
 
-            printf("\n=== SUCCESS! ===\n");
-            printf("PubKey: %s\nnTime: %u\nnNonce: %u\nMerkle: %s\nHash: %s\n", pubkey, ntime, nonce, merkle_root_hex, final_hash_hex);
+            printf("\n=== SUCCESS! RESULTS FOR CHAINPARAMS ===\n");
+            printf("pszTimestamp:  \"%s\"\n", message);
+            printf("PubKey (Hex):  %s\n", pubkey);
+            printf("nTime:         %u\n", ntime);
+            printf("nNonce:        %u\n", nonce);
+            printf("nBits:         0x%s\n", bits_arg); // bits_arg es el string original del argv
+            printf("Merkle Root:   %s\n", merkle_root_hex);
+            printf("Genesis Hash:  %s\n", final_hash_hex);
+            printf("nVersion:      1\n");
+            printf("=========================================\n");
 
             return 0;
         }
