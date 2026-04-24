@@ -149,7 +149,7 @@ int main(int argc, char* argv[]) {
     const char* message = argv[2];
     uint32_t nbits = (uint32_t)strtoul(argv[3], NULL, 16);
     double reward = atof(argv[4]);
-    uint32_t ntime = 1777054286 // (uint32_t)time(NULL);
+    uint32_t ntime = 1777054286; // (uint32_t)time(NULL);
 
     char merkle_root_hex[65];
     create_merkle_root_exact(pubkey, message, nbits, reward, merkle_root_hex);
