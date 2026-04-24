@@ -243,6 +243,7 @@ int main(int argc, char* argv[]) {
             cout << endl;
             cout << "=== SUCCESS! RESULTS FOR CHAINPARAMS ===" << endl;
             cout << "pszTimestamp:  \"" << message << "\"" << endl;
+            cout << "PubKey (Hex):  " << pubkey << endl;
             cout << "nTime:         " << NTIME << endl;
             cout << "nNonce:        " << nonce << endl;
             cout << "nBits:         0x" << bits_str << endl;
