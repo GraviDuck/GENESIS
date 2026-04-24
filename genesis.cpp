@@ -1,4 +1,4 @@
-#include <iostream> // g++ -O3 -static -std=c++17 genesis.cpp -o genesis -lcrypto
+#include <iostream> // g++ -O3 -march=native -flto genesis.cpp -o genesis -lcrypto && strip genesis
 #include <vector>
 #include <string>
 #include <sstream>
