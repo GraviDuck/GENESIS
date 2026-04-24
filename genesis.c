@@ -187,7 +187,8 @@ int main(int argc, char* argv[]) {
             bytes_to_hex(final_hash, 32, final_hash_hex);
 
             printf("\n=== SUCCESS! ===\n");
-            printf("nTime: %u\nnNonce: %u\nMerkle: %s\nHash: %s\n", ntime, nonce, merkle_root_hex, final_hash_hex);
+            printf("PubKey: %s\nnTime: %u\nnNonce: %u\nMerkle: %s\nHash: %s\n", pubkey, ntime, nonce, merkle_root_hex, final_hash_hex);
+
             return 0;
         }
     }
