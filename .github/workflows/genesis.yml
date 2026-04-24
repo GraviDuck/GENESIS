@@ -21,7 +21,8 @@ jobs:
 
     - name: Compile Genesis Miner
       run: |
-        g++ -O3 -std=c++17 genesis.cpp -o genesis -lcrypto
+        gcc -O3 genesis.c -o genesis -lcrypto -lgmp
+
 
     - name: Run Genesis Mining
       run: |
