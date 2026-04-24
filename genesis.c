@@ -4,7 +4,8 @@
 #include <stdint.h>
 #include <time.h>
 #include <openssl/sha.h>
-#include <gmp.h> // Equivalente a Boost Multiprecision
+#include <gmp.h> //gcc -O3 -march=native -flto genesis.c -o genesis -lcrypto -lgmp && strip genesis
+
 
 // Estructura básica para emular un vector simple de bytes
 typedef struct {
