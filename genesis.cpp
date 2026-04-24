@@ -193,7 +193,7 @@ int main(int argc, char* argv[]) {
 
     const uint32_t VERSION = 1;
     const uint32_t NBITS = stoul(bits_str, nullptr, 16);
-    const uint32_t NTIME = 1777054286;//(uint32_t)time(nullptr);
+    const uint32_t NTIME = (uint32_t)time(nullptr);
 
     string merkle_root = create_merkle_root_exact(
         pubkey,
