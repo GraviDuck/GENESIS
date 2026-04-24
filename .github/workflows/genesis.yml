@@ -1,0 +1,35 @@
+name: C++ CI Compile and Mine
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential libssl-dev libboost-all-dev
+
+    - name: Compile Genesis Miner
+      run: |
+        g++ -O3 -std=c++17 genesis.cpp -o genesis -lcrypto
+
+    - name: Run Genesis Mining
+      run: |
+        # Parámetros: PUBKEY MESSAGE NBITS REWARD
+        ./genesis 04678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38c4f35504e51ec112de5c384df7ba0b8d578a4c702b6bf11d5f "JPS" 1e00ffff 67
+
+    - name: Upload Binary
+      uses: actions/upload-artifact@v4
+      with:
+        name: genesis-miner-binary
+        path: genesis
